@@ -1,4 +1,4 @@
-
+#!/usr/bin/env node
 /*
  * musicForProgramming
  * A simple command line interface for streaming musicForProgramming.net

@@ -7,7 +7,9 @@
     "blessed": "^0.1.81",
     "cheerio": "^0.22.0",
     "request": "^2.74.0",
-    "streaming-player": "^1.0.0"
+    "streaming-player": "^1.0.0",
+    "speaker": "*",
+    "lame": "*"
   },
   "devDependencies": {},
   "scripts": {
