@@ -1,6 +1,8 @@
 # musicForProgramming
 Stream musicforprogramming.net directly in your terminal!
 
+![Terminal Window running music-for-programming](screenshot.png)
+
 ## Installing
 ```bash
 cd /opt
