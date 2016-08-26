@@ -1,0 +1,33 @@
+{
+  "name": "music-for-programming",
+  "version": "0.1.0",
+  "description": "Stream musicForProgramming.net directly into your terminal window",
+  "main": "mfp.js",
+  "dependencies": {
+    "blessed": "^0.1.81",
+    "cheerio": "^0.22.0",
+    "request": "^2.74.0",
+    "streaming-player": "^1.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/isdampe/music-for-programming.git"
+  },
+  "keywords": [
+    "cli",
+    "music",
+    "stream",
+    "programming",
+    "audio"
+  ],
+  "author": "isdampe",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/isdampe/music-for-programming/issues"
+  },
+  "homepage": "https://github.com/isdampe/music-for-programming#readme"
+}
