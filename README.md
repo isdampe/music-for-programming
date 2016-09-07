@@ -3,6 +3,15 @@ Stream musicforprogramming.net directly in your terminal!
 
 ![Terminal Window running music-for-programming](screenshot.png)
 
+## Pre-requisites
+If you're running on linux, you'll need libasound2-dev to use mfp.
+
+On Ubuntu / Debian
+
+```bash
+sudo apt-get install libasound2-dev
+```
+
 ## Installing
 ```bash
 npm install -g music-for-programming
