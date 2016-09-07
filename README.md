@@ -5,13 +5,7 @@ Stream musicforprogramming.net directly in your terminal!
 
 ## Installing
 ```bash
-cd /opt
-mkdir mfp
-cd mfp
 npm install -g music-for-programming
-cd node_modules/music-for-programming
-chmod +x mfp.js
-sudo ln -s /opt/mfp/node_modules/music-for-programming/mfp.js /usr/local/bin/mfp
 ```
 
 ## Running
