@@ -291,7 +291,8 @@ var activeTrack, musicActive = false, rainActive = false;
 
   var fetchTracks = function() {
 
-    request(remote_endpoint,function(err,res,body){
+    var base_endpoint = remote_endpoint + '?null';
+    request(base_endpoint,function(err,res,body){
       if ( err || res.statusCode !== 200 ) {
         failAndDie("Could not connect to " + remote_endpoint);
       }
