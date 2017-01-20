@@ -174,6 +174,10 @@ var activeTrack, musicActive = false, rainActive = false;
 
   var buildUI = function() {
 
+    var nowPlayingBoxHeight = 5,
+        columnWidth = '49.75%',
+        keysBoxHeight = 7;
+
     // Create a screen object.
     screen = blessed.screen({
       smartCSR: true
@@ -184,9 +188,9 @@ var activeTrack, musicActive = false, rainActive = false;
     // Create a box perfectly centered horizontally and vertically.
     boxNowPlaying = blessed.box({
       top: 'top',
-      left: 'center',
-      width: '100%',
-      height: '150',
+      left: 0,
+      right: 0,
+      height: nowPlayingBoxHeight,
       content: ' Welcome to musicforprogramming.net\n {bold}Loading...{/bold}',
       tags: true,
       border: {
@@ -205,10 +209,10 @@ var activeTrack, musicActive = false, rainActive = false;
     screen.append(boxNowPlaying);
 
     boxTrackList = blessed.box({
-      top: '150',
-      left: '50%',
-      width: '50%',
-      height: '60%',
+      top: nowPlayingBoxHeight,
+      right: 0,
+      width: columnWidth,
+      bottom: keysBoxHeight,
       content: ' No album selected',
       tags: true,
       border: {
@@ -225,10 +229,10 @@ var activeTrack, musicActive = false, rainActive = false;
     screen.append(boxTrackList);
 
     var boxKeys = blessed.box({
-      top: '720',
-      left: '50%',
-      width: '50%',
-      height: '30%',
+      right: 0,
+      width: columnWidth,
+      height: keysBoxHeight,
+      bottom: 0,
       content: ' {bold}Controls{/bold}\n {bold}Enter{/bold}: Select album\n {bold}P{/bold}: Toggle play/pause\n {bold}R{/bold}: Toggle rain\n {bold}Q / Ctrl + C{/bold}: Quit',
       tags: true,
       border: {
@@ -246,9 +250,10 @@ var activeTrack, musicActive = false, rainActive = false;
 
     albumList = blessed.list({
       parent: screen,
-      width: '50%',
-      height: '90%',
-      top: '150',
+      width: columnWidth,
+      left: 0,
+      top: nowPlayingBoxHeight,
+      bottom: '0',
       left: 'left',
       align: 'left',
       fg: 'white',
