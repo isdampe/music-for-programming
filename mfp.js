@@ -110,6 +110,13 @@ var activeTrack, musicActive = false, rainActive = false;
 		setLoading();
 		var request_url = obj.link;
 
+		//If we have already fetched the track list, don't bother again.
+		if ( obj.tracklist ) {
+			setTrackListText( obj.name, obj.tracklist );
+			playTrack(obj,obj.key, 1);
+			return;
+		}
+
 		request(request_url, function(err,res,body){
 			if ( err || res.statusCode !== 200 ) {
 				return false;
@@ -309,7 +316,8 @@ var activeTrack, musicActive = false, rainActive = false;
 				let obj = {
 					key: track.enclosure.url,
 					name: track.title.replace(/Episode /g, ""),
-					link: track.link
+					link: track.link,
+					tracklist: false
 				};
 				albums[obj.name] = obj;
 				injectTrackIntoUI(obj.name);
