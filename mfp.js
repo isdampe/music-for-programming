@@ -22,283 +22,283 @@ var activeTrack, musicActive = false, rainActive = false;
 
 (function(){
 
-  //Blessed
-  var screen, albumList, boxNowPlaying, boxTrackList;
+	//Blessed
+	var screen, albumList, boxNowPlaying, boxTrackList;
 
-  //Ours
+	//Ours
 	var api = new mfpApi();
-  var albums = {};
+	var albums = {};
 
-  var main = function() {
-    buildUI();
-    fetchTracks();
-  };
+	var main = function() {
+		buildUI();
+		fetchTracks();
+	};
 
-  var toggleRain = function() {
-    if ( typeof track2 !== 'undefined' && track2.isPlaying() ) {
-      stopRain();
-    } else {
-      playRain();
-    }
-    writeStatusMessage();
-  };
+	var toggleRain = function() {
+		if ( typeof track2 !== 'undefined' && track2.isPlaying() ) {
+			stopRain();
+		} else {
+			playRain();
+		}
+		writeStatusMessage();
+	};
 
-  var stopRain = function() {
-    if ( typeof track2 !== 'undefined' ) {
-      if ( track2.isPlaying() ) track2.pause();
-      delete track;
-      rainActive = false;
-    }
-  }
+	var stopRain = function() {
+		if ( typeof track2 !== 'undefined' ) {
+			if ( track2.isPlaying() ) track2.pause();
+			delete track;
+			rainActive = false;
+		}
+	}
 
-  var playRain = function() {
+	var playRain = function() {
 
-    if ( typeof track2 !== 'undefined' ) {
-      if ( track2.isPlaying() ) track2.pause();
-    }
-    track2 = new StreamPlayer();
-    track2.add(rainy_mood);
-    track2.play();
-    rainActive = true;
+		if ( typeof track2 !== 'undefined' ) {
+			if ( track2.isPlaying() ) track2.pause();
+		}
+		track2 = new StreamPlayer();
+		track2.add(rainy_mood);
+		track2.play();
+		rainActive = true;
 
-  };
+	};
 
-  var setIdle = function() {
-    setStatusMessage('Idle');
-  };
+	var setIdle = function() {
+		setStatusMessage('Idle');
+	};
 
-  var setLoading = function() {
-    setStatusMessage('Loading...');
-  };
+	var setLoading = function() {
+		setStatusMessage('Loading...');
+	};
 
-  var writeStatusMessage = function() {
+	var writeStatusMessage = function() {
 
-    var playStatus = ( musicActive === true ? 'Playing' : 'Paused' );
-    var rainStatus = ( rainActive === true ? 'With rain' : '' );
-    var track = ( typeof activeTrack === 'undefined' ? '' : activeTrack );
+		var playStatus = ( musicActive === true ? 'Playing' : 'Paused' );
+		var rainStatus = ( rainActive === true ? 'With rain' : '' );
+		var track = ( typeof activeTrack === 'undefined' ? '' : activeTrack );
 
-    boxNowPlaying.content = ' Welcome to musicforprogramming.net\n ' + '{bold}' + playStatus + '{/bold} ' + track + ' {bold}' + rainStatus + '{/bold}';
-    screen.render();
+		boxNowPlaying.content = ' Welcome to musicforprogramming.net\n ' + '{bold}' + playStatus + '{/bold} ' + track + ' {bold}' + rainStatus + '{/bold}';
+		screen.render();
 
-  };
+	};
 
-  var setStatusMessage = function(status) {
+	var setStatusMessage = function(status) {
 
-    var playStatus = ( musicActive === true ? 'Playing' : 'Paused' );
+		var playStatus = ( musicActive === true ? 'Playing' : 'Paused' );
 
-    boxNowPlaying.content = ' Welcome to musicforprogramming.net\n {bold}' + status + '{/bold}    {bold}(' + playStatus + '){/bold}';
-    screen.render();
+		boxNowPlaying.content = ' Welcome to musicforprogramming.net\n {bold}' + status + '{/bold}    {bold}(' + playStatus + '){/bold}';
+		screen.render();
 
-  };
+	};
 
-  var selectTrack = function(node) {
+	var selectTrack = function(node) {
 
-    if ( typeof node === 'undefined' ) return;
+		if ( typeof node === 'undefined' ) return;
 
-    var key = node.content;
+		var key = node.content;
 
-    if (! albums.hasOwnProperty(key) ) return;
+		if (! albums.hasOwnProperty(key) ) return;
 
-    var obj = albums[key];
+		var obj = albums[key];
 
-    fetchAndPlay(obj);
+		fetchAndPlay(obj);
 
-  };
+	};
 
-  var fetchAndPlay = function(obj) {
+	var fetchAndPlay = function(obj) {
 
-    setLoading();
-    var request_url = obj.link;
+		setLoading();
+		var request_url = obj.link;
 
-    request(request_url, function(err,res,body){
-      if ( err || res.statusCode !== 200 ) {
-        return false;
-      }
+		request(request_url, function(err,res,body){
+			if ( err || res.statusCode !== 200 ) {
+				return false;
+			}
 
-      var $ = cheerio.load(body);
+			var $ = cheerio.load(body);
 
-      var rh = $('.lg-r .pad').text();
-      var spl = rh.indexOf('mb)');
-      var nw = rh.substring(spl + 3);
+			var rh = $('.lg-r .pad').text();
+			var spl = rh.indexOf('mb)');
+			var nw = rh.substring(spl + 3);
 
-      if ( nw ) albums[obj.name].tracklist = nw;
+			if ( nw ) albums[obj.name].tracklist = nw;
 
-      setTrackListText( obj.name, nw );
-      playTrack( obj,obj.key, 1 );
+			setTrackListText( obj.name, nw );
+			playTrack( obj,obj.key, 1 );
 
-      delete $;
+			delete $;
 
-    });
+		});
 
-  };
+	};
 
-  var togglePauseMusic = function() {
-    if ( typeof track1 !== 'undefined' && track1.isPlaying() ) {
-      track1.pause();
-      musicActive = false;
-    } else {
-      track1.play();
-      musicActive = true;
-    }
-    writeStatusMessage();
-  };
+	var togglePauseMusic = function() {
+		if ( typeof track1 !== 'undefined' && track1.isPlaying() ) {
+			track1.pause();
+			musicActive = false;
+		} else {
+			track1.play();
+			musicActive = true;
+		}
+		writeStatusMessage();
+	};
 
-  var playTrack = function( obj,audiosrc, trackNum ) {
+	var playTrack = function( obj,audiosrc, trackNum ) {
 
-    if ( trackNum === 1 ) {
-      if ( typeof track1 !== 'undefined' ) {
-        track1.pause();
-      }
-      activeTrack = audiosrc;
-      track1 = new StreamPlayer();
-      track1.add(audiosrc);
-      play(obj,trackNum);
-      musicActive = true;
-    }
+		if ( trackNum === 1 ) {
+			if ( typeof track1 !== 'undefined' ) {
+				track1.pause();
+			}
+			activeTrack = audiosrc;
+			track1 = new StreamPlayer();
+			track1.add(audiosrc);
+			play(obj,trackNum);
+			musicActive = true;
+		}
 
-  };
+	};
 
-  var play = function(obj,trackNum) {
-    if ( trackNum === 1 ) {
-      track1.play();
-      musicActive = true;
-      //setStatusMessage('Playing ' + obj.name);
-      writeStatusMessage();
-    }
-  };
+	var play = function(obj,trackNum) {
+		if ( trackNum === 1 ) {
+			track1.play();
+			musicActive = true;
+			//setStatusMessage('Playing ' + obj.name);
+			writeStatusMessage();
+		}
+	};
 
-  var setTrackListText = function( name, nw ) {
-    boxTrackList.content = name + nw;
-    screen.render();
-  };
+	var setTrackListText = function( name, nw ) {
+		boxTrackList.content = name + nw;
+		screen.render();
+	};
 
-  var buildUI = function() {
+	var buildUI = function() {
 
-    var nowPlayingBoxHeight = 5,
-        columnWidth = '49.75%',
-        keysBoxHeight = 7;
+		var nowPlayingBoxHeight = 5,
+			columnWidth = '49.75%',
+			keysBoxHeight = 7;
 
-    // Create a screen object.
-    screen = blessed.screen({
-      smartCSR: true
-    });
+		// Create a screen object.
+		screen = blessed.screen({
+			smartCSR: true
+		});
 
-    screen.title = 'musicforprogramming';
+		screen.title = 'musicforprogramming';
 
-    // Create a box perfectly centered horizontally and vertically.
-    boxNowPlaying = blessed.box({
-      top: 'top',
-      left: 0,
-      right: 0,
-      height: nowPlayingBoxHeight,
-      content: ' Welcome to musicforprogramming.net\n {bold}Loading...{/bold}',
-      tags: true,
-      border: {
-        type: 'line'
-      },
-      style: {
-        fg: 'white',
-        //bg: 'magenta',
-        border: {
-          fg: '#f0f0f0'
-        }
-      }
-    });
+		// Create a box perfectly centered horizontally and vertically.
+		boxNowPlaying = blessed.box({
+			top: 'top',
+			left: 0,
+			right: 0,
+			height: nowPlayingBoxHeight,
+			content: ' Welcome to musicforprogramming.net\n {bold}Loading...{/bold}',
+			tags: true,
+			border: {
+				type: 'line'
+			},
+			style: {
+				fg: 'white',
+				//bg: 'magenta',
+				border: {
+					fg: '#f0f0f0'
+				}
+			}
+		});
 
-    // Append our box to the screen.
-    screen.append(boxNowPlaying);
+		// Append our box to the screen.
+		screen.append(boxNowPlaying);
 
-    boxTrackList = blessed.box({
-      top: nowPlayingBoxHeight,
-      right: 0,
-      width: columnWidth,
-      bottom: keysBoxHeight,
-      content: ' No album selected',
-      tags: true,
-      border: {
-        type: 'line'
-      },
-      style: {
-        fg: 'white',
-        //bg: 'magenta',
-        border: {
-          fg: '#f0f0f0'
-        }
-      }
-    });
-    screen.append(boxTrackList);
+		boxTrackList = blessed.box({
+			top: nowPlayingBoxHeight,
+			right: 0,
+			width: columnWidth,
+			bottom: keysBoxHeight,
+			content: ' No album selected',
+			tags: true,
+			border: {
+				type: 'line'
+			},
+			style: {
+				fg: 'white',
+				//bg: 'magenta',
+				border: {
+					fg: '#f0f0f0'
+				}
+			}
+		});
+		screen.append(boxTrackList);
 
-    var boxKeys = blessed.box({
-      right: 0,
-      width: columnWidth,
-      height: keysBoxHeight,
-      bottom: 0,
-      content: ' {bold}Controls{/bold}\n {bold}Enter{/bold}: Select album\n {bold}P{/bold}: Toggle play/pause\n {bold}R{/bold}: Toggle rain\n {bold}Q / Ctrl + C{/bold}: Quit',
-      tags: true,
-      border: {
-        type: 'line'
-      },
-      style: {
-        fg: 'white',
-        border: {
-          fg: '#f0f0f0'
-        }
-      }
-    });
-    screen.append(boxKeys);
+		var boxKeys = blessed.box({
+			right: 0,
+			width: columnWidth,
+			height: keysBoxHeight,
+			bottom: 0,
+			content: ' {bold}Controls{/bold}\n {bold}Enter{/bold}: Select album\n {bold}P{/bold}: Toggle play/pause\n {bold}R{/bold}: Toggle rain\n {bold}Q / Ctrl + C{/bold}: Quit',
+			tags: true,
+			border: {
+				type: 'line'
+			},
+			style: {
+				fg: 'white',
+				border: {
+					fg: '#f0f0f0'
+				}
+			}
+		});
+		screen.append(boxKeys);
 
 
-    albumList = blessed.list({
-      parent: screen,
-      width: columnWidth,
-      left: 0,
-      top: nowPlayingBoxHeight,
-      bottom: '0',
-      left: 'left',
-      align: 'left',
-      fg: 'white',
-      border: {
-        type: 'line'
-      },
-      selectedBg: 'red',
-      keys: true,
-      vi: true
-    });
+		albumList = blessed.list({
+			parent: screen,
+			width: columnWidth,
+			left: 0,
+			top: nowPlayingBoxHeight,
+			bottom: '0',
+			left: 'left',
+			align: 'left',
+			fg: 'white',
+			border: {
+				type: 'line'
+			},
+			selectedBg: 'red',
+			keys: true,
+			vi: true
+		});
 
-    // Select the first item.
-    //albumList.select(0);
-    albumList.on('select', selectTrack);
+		// Select the first item.
+		//albumList.select(0);
+		albumList.on('select', selectTrack);
 
-    // Quit on Escape, q, or Control-C.
-    screen.key(['escape', 'q', 'C-c'], function(ch, key) {
-      return process.exit(0);
-    });
-    screen.key(['r'], toggleRain);
-    screen.key(['p'], togglePauseMusic);
+		// Quit on Escape, q, or Control-C.
+		screen.key(['escape', 'q', 'C-c'], function(ch, key) {
+			return process.exit(0);
+		});
+		screen.key(['r'], toggleRain);
+		screen.key(['p'], togglePauseMusic);
 
-    // Focus our element.
-    albumList.focus();
+		// Focus our element.
+		albumList.focus();
 
-    // Render the screen.
-    screen.render();
+		// Render the screen.
+		screen.render();
 
-  };
+	};
 
-  var injectTrackIntoUI = function(track) {
-    albumList.addItem(track);
-    screen.render();
-  };
+	var injectTrackIntoUI = function(track) {
+		albumList.addItem(track);
+		screen.render();
+	};
 
-  var failAndDie = function(msg) {
-    console.error(msg);
-    process.exit(1);
-  };
+	var failAndDie = function(msg) {
+		console.error(msg);
+		process.exit(1);
+	};
 
 	/**
 	 * Fetches tracks and injects them into the UI
 	 * @return {void}
 	 */
-  var fetchTracks = function() {
+	var fetchTracks = function() {
 
 		api.fetchTracks((err,tracks) => {
 			if ( err ) fatalError('Error fetching RSS feed');
@@ -321,6 +321,6 @@ var activeTrack, musicActive = false, rainActive = false;
 
 	};
 
-  main();
+	main();
 
 })();
