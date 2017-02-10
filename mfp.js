@@ -4,10 +4,11 @@
  * A simple command line interface for streaming musicForProgramming.net
  * @author isdampe <https://github.com/isdampe>
  */
-var request = require('request');
 var blessed = require('blessed');
 var cheerio = require('cheerio');
+var request = require('request');
 var StreamPlayer = require('streaming-player');
+var mfpApi = require('./lib/mfp-api.js');
 
 //Dev notes.
 //Remember to modify stream-player to fix url streaming
@@ -25,6 +26,7 @@ var activeTrack, musicActive = false, rainActive = false;
   var screen, albumList, boxNowPlaying, boxTrackList;
 
   //Ours
+	var api = new mfpApi();
   var albums = {};
 
   var main = function() {
@@ -106,7 +108,7 @@ var activeTrack, musicActive = false, rainActive = false;
   var fetchAndPlay = function(obj) {
 
     setLoading();
-    var request_url = remote_endpoint + obj.key;
+    var request_url = obj.link;
 
     request(request_url, function(err,res,body){
       if ( err || res.statusCode !== 200 ) {
@@ -119,12 +121,10 @@ var activeTrack, musicActive = false, rainActive = false;
       var spl = rh.indexOf('mb)');
       var nw = rh.substring(spl + 3);
 
-      var audiosrc = $('audio').attr('src');
-      if ( audiosrc ) albums[obj.name].audiosrc = audiosrc;
       if ( nw ) albums[obj.name].tracklist = nw;
 
       setTrackListText( obj.name, nw );
-      playTrack( obj,audiosrc, 1 );
+      playTrack( obj,obj.key, 1 );
 
       delete $;
 
@@ -294,32 +294,32 @@ var activeTrack, musicActive = false, rainActive = false;
     process.exit(1);
   };
 
+	/**
+	 * Fetches tracks and injects them into the UI
+	 * @return {void}
+	 */
   var fetchTracks = function() {
 
-    var base_endpoint = remote_endpoint + '?null';
-    request(base_endpoint,function(err,res,body){
-      if ( err || res.statusCode !== 200 ) {
-        failAndDie("Could not connect to " + remote_endpoint);
-      }
+		api.fetchTracks((err,tracks) => {
+			if ( err ) fatalError('Error fetching RSS feed');
 
-      var $ = cheerio.load(body);
-      $('.multi-column a').each(function(){
-        var obj = {
-          key: $(this).attr('href'),
-          name: $(this).html()
-        };
-        albums[obj.name] = obj;
-        injectTrackIntoUI(obj.name);
-      });
+			for ( var i=0; i<tracks.length; i++ ) {
+				let track = tracks[i];
 
-      delete $;
+				let obj = {
+					key: track.enclosure.url,
+					name: track.title.replace(/Episode /g, ""),
+					link: track.link
+				};
+				albums[obj.name] = obj;
+				injectTrackIntoUI(obj.name);
+			}
 
-      //Set idle.
-      setIdle();
+			setIdle();
 
-    });
+		});
 
-  };
+	};
 
   main();
 
