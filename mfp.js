@@ -140,9 +140,9 @@ var activeTrack, musicActive = false, rainActive = false;
 	};
 
 	var togglePauseMusic = function() {
-        if ( typeof track1 === 'undefined' ) {
-        	return;
-        }
+		if ( typeof track1 === 'undefined' ) {
+			return;
+		}
 
 		if ( track1.isPlaying() )
 		{
