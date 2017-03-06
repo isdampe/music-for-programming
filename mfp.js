@@ -35,7 +35,11 @@ var activeTrack, musicActive = false, rainActive = false;
 	};
 
 	var toggleRain = function() {
-		if ( typeof track2 !== 'undefined' && track2.isPlaying() ) {
+		if ( typeof track2 === 'undefined' ) {
+			return;
+		}
+
+		if ( track2.isPlaying() ) {
 			stopRain();
 		} else {
 			playRain();
