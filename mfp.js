@@ -35,14 +35,10 @@ var activeTrack, musicActive = false, rainActive = false;
 	};
 
 	var toggleRain = function() {
-		if ( typeof track2 === 'undefined' ) {
-			return;
-		}
-
-		if ( track2.isPlaying() ) {
-			stopRain();
-		} else {
+		if ( typeof track2 === 'undefined' || ! track2.isPlaying() ) {
 			playRain();
+		} else {
+			stopRain();
 		}
 		writeStatusMessage();
 	};
@@ -50,10 +46,10 @@ var activeTrack, musicActive = false, rainActive = false;
 	var stopRain = function() {
 		if ( typeof track2 !== 'undefined' ) {
 			if ( track2.isPlaying() ) track2.pause();
-			delete track;
+			delete track2;
 			rainActive = false;
 		}
-	}
+	};
 
 	var playRain = function() {
 
