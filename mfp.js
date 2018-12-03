@@ -45,7 +45,11 @@ var activeTrack, musicActive = false, rainActive = false;
 
 	var stopRain = function() {
 		if ( typeof track2 !== 'undefined' ) {
-			if ( track2.isPlaying() ) track2.pause();
+			if (track2.isPlaying()) {
+				try {
+					track2.pause();
+				} catch (e) {;}
+			}
 			delete track;
 			rainActive = false;
 		}
@@ -54,7 +58,11 @@ var activeTrack, musicActive = false, rainActive = false;
 	var playRain = function() {
 
 		if ( typeof track2 !== 'undefined' ) {
-			if ( track2.isPlaying() ) track2.pause();
+			if (track2.isPlaying()) {
+				try {
+					track2.pause();
+				} catch (e) {;}
+			}
 		}
 		track2 = new StreamPlayer();
 		track2.add(rainy_mood);
