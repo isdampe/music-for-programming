@@ -2,25 +2,19 @@
 /*
  * musicForProgramming
  * A simple command line interface for streaming musicForProgramming.net
+ * Send pull requests to https://github.com/isdampe/music-for-programming
  * @author isdampe <https://github.com/isdampe>
  */
-var blessed = require('blessed');
-var cheerio = require('cheerio');
-var request = require('request');
-var StreamPlayer = require('streaming-player');
-var mfpApi = require('./lib/mfp-api.js');
-
-//Dev notes.
-//Remember to modify stream-player to fix url streaming
-//https://github.com/michael-gillett/node-stream-player/issues/2
-
+const blessed = require('blessed');
+const StreamPlayer = require('streaming-player');
+const mfpApi = require('./lib/mfp-api.js');
 const remote_endpoint = "http://musicforprogramming.net/";
 const rainy_mood = "http://rainymood.com/audio1110/0.mp3";
-var track1, track2;
-var activeTrack, musicActive = false, rainActive = false;
-
 
 (function(){
+
+	var track1, track2;
+	var activeTrack, musicActive = false, rainActive = false;
 
 	//Blessed
 	var screen, albumList, boxNowPlaying, boxTrackList;
@@ -35,10 +29,10 @@ var activeTrack, musicActive = false, rainActive = false;
 	};
 
 	var toggleRain = function() {
-		if ( typeof track2 !== 'undefined' && track2.isPlaying() ) {
-			stopRain();
-		} else {
+		if ( typeof track2 === 'undefined' || ! track2.isPlaying() ) {
 			playRain();
+		} else {
+			stopRain();
 		}
 		writeStatusMessage();
 	};
@@ -53,7 +47,7 @@ var activeTrack, musicActive = false, rainActive = false;
 			delete track;
 			rainActive = false;
 		}
-	}
+	};
 
 	var playRain = function() {
 
@@ -116,7 +110,7 @@ var activeTrack, musicActive = false, rainActive = false;
 	var fetchAndPlay = function(obj) {
 
 		setLoading();
-		var request_url = obj.link;
+		var requestUrl = obj.link;
 
 		//If we have already fetched the track list, don't bother again.
 		if ( obj.tracklist ) {
@@ -125,30 +119,26 @@ var activeTrack, musicActive = false, rainActive = false;
 			return;
 		}
 
-		request(request_url, function(err,res,body){
-			if ( err || res.statusCode !== 200 ) {
+		api.fetchTrackList(requestUrl, function(err, tracklist){
+			if ( err ) {
 				return false;
 			}
 
-			var $ = cheerio.load(body);
-
-			var rh = $('.lg-r .pad').text();
-			var spl = rh.indexOf('mb)');
-			var nw = rh.substring(spl + 3);
-
-			if ( nw ) albums[obj.name].tracklist = nw;
-
-			setTrackListText( obj.name, nw );
+			albums[obj.name].tracklist = tracklist;
+			
+			setTrackListText( obj.name, tracklist );
 			playTrack( obj,obj.key, 1 );
-
-			delete $;
-
 		});
 
 	};
 
 	var togglePauseMusic = function() {
-		if ( typeof track1 !== 'undefined' && track1.isPlaying() ) {
+		if ( typeof track1 === 'undefined' ) {
+			return;
+		}
+
+		if ( track1.isPlaying() )
+		{
 			track1.pause();
 			musicActive = false;
 		} else {
