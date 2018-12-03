@@ -1,6 +1,6 @@
 {
 	"name": "music-for-programming",
-	"version": "0.1.6",
+	"version": "0.1.7",
 	"description": "Stream musicForProgramming.net directly into your terminal window",
 	"bin": {
 		"mfp": "mfp.js"
