@@ -1,332 +1,140 @@
 #!/usr/bin/env node
-/*
- * musicForProgramming
- * A simple command line interface for streaming musicForProgramming.net
- * Send pull requests to https://github.com/isdampe/music-for-programming
- * @author isdampe <https://github.com/isdampe>
- */
-const blessed = require('blessed');
-const StreamPlayer = require('streaming-player');
+const tui = require("./lib/mfp-tui.js"); 
 const mfpApi = require('./lib/mfp-api.js');
-const remote_endpoint = "http://musicforprogramming.net/";
-const rainy_mood = "http://rainymood.com/audio1110/0.mp3";
+const mfpRain = require("./lib/mfp-rain.js");
+const fmp3 = require("fat-mp3");
 
-(function(){
+const STATUS_LOADING = 0x0;
+const STATUS_IDLE = 0x1;
+const STATUS_PLAY = 0x2;
+const STATUS_PAUSED = 0x3;
 
-	var track1, track2;
-	var activeTrack, musicActive = false, rainActive = false;
+class Mfp 
+{
+	constructor() {
+		this.ui = new tui();
+		this.api = new mfpApi();
+		this.rain = new mfpRain();
+		this.currentMusicTrack = null;
+		this.musicPlayer = null
+		this._playing = false;
 
-	//Blessed
-	var screen, albumList, boxNowPlaying, boxTrackList;
+		this._status = null;
+		this._setStatus(STATUS_LOADING);
+		this._setKeys();
+		this._fetchTracks();
+	}
 
-	//Ours
-	var api = new mfpApi();
-	var albums = {};
+	_setKeys() {
+		this.ui.setKey(["escape", "q", "C-c"], (ch, key) => {
+			process.exit(0);
+		});
+		this.ui.setKey(["r"], (ch, key) => {
+			this.rain.toggle(() => {
+				this._renderStatus();
+			});
+		})
+		this.ui.setKey(["p"], (ch, key) => {
+			this.toggleMusic();
+		})
+	}
 
-	var main = function() {
-		buildUI();
-		fetchTracks();
-	};
+	_fetchTracks() {
+		this._setStatus(STATUS_LOADING);
+		this.api.fetchTracks((err, tracks) => {
+			if (err)
+				this._fatal("Error fetching album list.");
 
-	var toggleRain = function() {
-		if ( typeof track2 === 'undefined' || ! track2.isPlaying() ) {
-			playRain();
-		} else {
-			stopRain();
-		}
-		writeStatusMessage();
-	};
-
-	var stopRain = function() {
-		if ( typeof track2 !== 'undefined' ) {
-			if (track2.isPlaying()) {
-				try {
-					track2.pause();
-				} catch (e) {;}
+			for (let track of tracks) {
+				let title = track.title.replace(/Episode /g, "");
+				this.ui.insertAlbumEntry(title, () => {
+					this._fetchAndPlay(track.title, track.link, track.guid);
+				});
 			}
-			delete track;
-			rainActive = false;
+
+			if (this._status == STATUS_LOADING)
+				this._setStatus(STATUS_IDLE);
+		});
+	}
+
+	_setStatus(status) {
+		if (this._status == status)
+			return;
+
+		this._status = status;
+		this._renderStatus();	
+	}
+
+	_renderStatus() {
+		const rainStatus = (this.rain.isActive() ? "with rain" : "");
+		switch (this._status) {
+			case STATUS_IDLE:
+				this.ui.setStatusText(`Idle ${rainStatus}`, true);
+				break;
+			case STATUS_LOADING:
+				this.ui.setStatusText(`Loading... ${rainStatus}`, true);
+				break;
+			case STATUS_PLAY:
+				this.ui.setStatusText(`Playing ${this.currentMusicTrack} ${rainStatus}`, false);
+				break;
+			case STATUS_PAUSED:
+				this.ui.setStatusText(`PAUSED - ${this.currentMusicTrack} ${rainStatus}`, true);
+				break;
 		}
-	};
+	}
 
-	var playRain = function() {
+	_fetchAndPlay(albumTitle, albumLink, fileLink) {
+		if (this.currentMusicTrack == fileLink)
+			return;
 
-		if ( typeof track2 !== 'undefined' ) {
-			if (track2.isPlaying()) {
-				try {
-					track2.pause();
-				} catch (e) {;}
-			}
-		}
-		track2 = new StreamPlayer();
-		track2.add(rainy_mood);
-		track2.play();
-		rainActive = true;
+		this._setStatus(STATUS_LOADING);
+		this.api.fetchTrackList(albumLink, (err, trackList) => {
+			if (err)
+				this._fatal("Error fetching track list.");
 
-	};
+			this.ui.setTrackList(`${albumTitle}${trackList}`);
+			this.currentMusicTrack = fileLink;
+			this._autoPlay();
+		});
+	}
 
-	var setIdle = function() {
-		setStatusMessage('Idle');
-	};
+	_autoPlay() {
+		if (! this.currentMusicTrack)
+			return;
 
-	var setLoading = function() {
-		setStatusMessage('Loading...');
-	};
-
-	var writeStatusMessage = function() {
-
-		var playStatus = ( musicActive === true ? 'Playing' : 'Paused' );
-		var rainStatus = ( rainActive === true ? 'With rain' : '' );
-		var track = ( typeof activeTrack === 'undefined' ? '' : activeTrack );
-
-		boxNowPlaying.content = ' Welcome to musicforprogramming.net\n ' + '{bold}' + playStatus + '{/bold} ' + track + ' {bold}' + rainStatus + '{/bold}';
-		screen.render();
-
-	};
-
-	var setStatusMessage = function(status) {
-
-		var playStatus = ( musicActive === true ? 'Playing' : 'Paused' );
-
-		boxNowPlaying.content = ' Welcome to musicforprogramming.net\n {bold}' + status + '{/bold}    {bold}(' + playStatus + '){/bold}';
-		screen.render();
-
-	};
-
-	var selectTrack = function(node) {
-
-		if ( typeof node === 'undefined' ) return;
-
-		var key = node.content;
-
-		if (! albums.hasOwnProperty(key) ) return;
-
-		var obj = albums[key];
-
-		fetchAndPlay(obj);
-
-	};
-
-	var fetchAndPlay = function(obj) {
-
-		setLoading();
-		var requestUrl = obj.link;
-
-		//If we have already fetched the track list, don't bother again.
-		if ( obj.tracklist ) {
-			setTrackListText( obj.name, obj.tracklist );
-			playTrack(obj,obj.key, 1);
+		if (this.musicPlayer) {
+			this.musicPlayer.pause(() => {
+				this.musicPlayer = null;
+				this._autoPlay();
+			});
 			return;
 		}
 
-		api.fetchTrackList(requestUrl, function(err, tracklist){
-			if ( err ) {
-				return false;
-			}
+		this.musicPlayer = new fmp3(this.currentMusicTrack);
+		this.musicPlayer.play();
+		this._playing = true;
+		this._setStatus(STATUS_PLAY);
+	}
 
-			albums[obj.name].tracklist = tracklist;
-			
-			setTrackListText( obj.name, tracklist );
-			playTrack( obj,obj.key, 1 );
-		});
-
-	};
-
-	var togglePauseMusic = function() {
-		if ( typeof track1 === 'undefined' ) {
+	toggleMusic() {
+		if (! this.currentMusicTrack)
 			return;
-		}
 
-		if ( track1.isPlaying() )
-		{
-			track1.pause();
-			musicActive = false;
+		if (this._playing) {
+			this.musicPlayer.pause();
+			this._setStatus(STATUS_PAUSED);
 		} else {
-			track1.play();
-			musicActive = true;
-		}
-		writeStatusMessage();
-	};
-
-	var playTrack = function( obj,audiosrc, trackNum ) {
-
-		if ( trackNum === 1 ) {
-			if ( typeof track1 !== 'undefined' ) {
-				track1.pause();
-			}
-			activeTrack = audiosrc;
-			track1 = new StreamPlayer();
-			track1.add(audiosrc);
-			play(obj,trackNum);
-			musicActive = true;
+			this.musicPlayer.play();
+			this._setStatus(STATUS_PLAY);
 		}
 
-	};
+		this._playing = !this._playing;
+	}
 
-	var play = function(obj,trackNum) {
-		if ( trackNum === 1 ) {
-			track1.play();
-			musicActive = true;
-			//setStatusMessage('Playing ' + obj.name);
-			writeStatusMessage();
-		}
-	};
-
-	var setTrackListText = function( name, nw ) {
-		boxTrackList.content = name + nw;
-		screen.render();
-	};
-
-	var buildUI = function() {
-
-		var nowPlayingBoxHeight = 5,
-			columnWidth = '49.75%',
-			keysBoxHeight = 7;
-
-		// Create a screen object.
-		screen = blessed.screen({
-			smartCSR: true
-		});
-
-		screen.title = 'musicforprogramming';
-
-		// Create a box perfectly centered horizontally and vertically.
-		boxNowPlaying = blessed.box({
-			top: 'top',
-			left: 0,
-			right: 0,
-			height: nowPlayingBoxHeight,
-			content: ' Welcome to musicforprogramming.net\n {bold}Loading...{/bold}',
-			tags: true,
-			border: {
-				type: 'line'
-			},
-			style: {
-				fg: 'white',
-				//bg: 'magenta',
-				border: {
-					fg: '#f0f0f0'
-				}
-			}
-		});
-
-		// Append our box to the screen.
-		screen.append(boxNowPlaying);
-
-		boxTrackList = blessed.box({
-			top: nowPlayingBoxHeight,
-			right: 0,
-			width: columnWidth,
-			bottom: keysBoxHeight,
-			content: ' No album selected',
-			tags: true,
-			border: {
-				type: 'line'
-			},
-			style: {
-				fg: 'white',
-				//bg: 'magenta',
-				border: {
-					fg: '#f0f0f0'
-				}
-			}
-		});
-		screen.append(boxTrackList);
-
-		var boxKeys = blessed.box({
-			right: 0,
-			width: columnWidth,
-			height: keysBoxHeight,
-			bottom: 0,
-			content: ' {bold}Controls{/bold}\n {bold}Enter{/bold}: Select album\n {bold}P{/bold}: Toggle play/pause\n {bold}R{/bold}: Toggle rain\n {bold}Q / Ctrl + C{/bold}: Quit',
-			tags: true,
-			border: {
-				type: 'line'
-			},
-			style: {
-				fg: 'white',
-				border: {
-					fg: '#f0f0f0'
-				}
-			}
-		});
-		screen.append(boxKeys);
-
-
-		albumList = blessed.list({
-			parent: screen,
-			width: columnWidth,
-			left: 0,
-			top: nowPlayingBoxHeight,
-			bottom: '0',
-			left: 'left',
-			align: 'left',
-			fg: 'white',
-			border: {
-				type: 'line'
-			},
-			selectedBg: 'red',
-			keys: true,
-			vi: true
-		});
-
-		// Select the first item.
-		//albumList.select(0);
-		albumList.on('select', selectTrack);
-
-		// Quit on Escape, q, or Control-C.
-		screen.key(['escape', 'q', 'C-c'], function(ch, key) {
-			return process.exit(0);
-		});
-		screen.key(['r'], toggleRain);
-		screen.key(['p'], togglePauseMusic);
-
-		// Focus our element.
-		albumList.focus();
-
-		// Render the screen.
-		screen.render();
-
-	};
-
-	var injectTrackIntoUI = function(track) {
-		albumList.addItem(track);
-		screen.render();
-	};
-
-	var failAndDie = function(msg) {
-		console.error(msg);
+	_fatal(error) {
+		console.error(error);
 		process.exit(1);
-	};
+	}
+}
 
-	/**
-	 * Fetches tracks and injects them into the UI
-	 * @return {void}
-	 */
-	var fetchTracks = function() {
-
-		api.fetchTracks((err,tracks) => {
-			if ( err ) fatalError('Error fetching RSS feed');
-
-			for ( var i=0; i<tracks.length; i++ ) {
-				let track = tracks[i];
-
-				let obj = {
-					key: track.enclosure.url,
-					name: track.title.replace(/Episode /g, ""),
-					link: track.link,
-					tracklist: false
-				};
-				albums[obj.name] = obj;
-				injectTrackIntoUI(obj.name);
-			}
-
-			setIdle();
-
-		});
-
-	};
-
-	main();
-
-})();
+const mfp = new Mfp();
