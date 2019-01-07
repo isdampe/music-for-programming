@@ -21,6 +21,7 @@ if (process.argv.length >= 3) {
 				args.autoPlayRain = true;
 				break;
 			case "--help":
+			default:
 				usage();
 				process.exit(0);
 				break;
