@@ -12,7 +12,7 @@
 		"request": "^2.88.0",
 		"rss-parser": "2.5.2",
 		"sha1": "^1.1.1",
-		"fat-mp3": "^0.1.3"
+		"fat-mp3": "^0.1.5"
 	},
 	"devDependencies": {},
 	"scripts": {
